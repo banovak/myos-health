@@ -625,3 +625,5 @@ button.htitle:hover{background:var(--soft);cursor:pointer}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
 @keyframes scrimIn{from{background:transparent}}
 @media (prefers-reduced-motion:reduce){.scrim.up,.scrim.up>.sheet{animation:none}}
+/* the phone layout forces the add button to show; never on the sign-in screen */
+.fab[hidden]{display:none!important}

@@ -2837,6 +2837,20 @@ async function openMfaSetup(){
     $('#mfaForm').addEventListener('submit',async e=>{e.preventDefault();try{await STORE.mfaVerify(d.id,$('#mfa_c').value.trim());closeSheet();openSecurity()}catch(err){$('#mfaErr').textContent=err.message||String(err)}});
   }catch(err){$('#mfaBody').innerHTML=`<p class="err">${esc(err.message||String(err))}</p>`}
 }
+// a synced record is protected only by a password until two-step is on: ask on every sign-in until it is.
+// The vault isn't asked here: the intake import replaces the record, vault settings included, and needVault()
+// already makes encryption the first step of adding any photo or file.
+async function lockPrompt(){
+  if(STORE.mode!=='supabase')return;
+  let mfa=true;try{mfa=await STORE.mfaEnabled()}catch(_){}
+  try{if(mfa||sessionStorage.getItem('myos-lock-later'))return}catch(_){if(mfa)return}
+  openSheet(`<div class="sheet-h"><h3>Lock your record first</h3><button class="x" type="button" aria-label="Close">✕</button></div>
+   <p style="margin:0 0 12px;color:var(--muted);font-size:13px">Right now your password is the only thing protecting this record. Two-step sign-in adds a code from an authenticator app, and the database itself refuses any session without it.</p>
+   <div class="rcard" style="background:var(--accent-soft);margin-bottom:14px"><span class="t">Photos and files come later.</span><span class="s">The first time you add one, you'll set a photo passphrase, and everything is encrypted on this device before it uploads.</span></div>
+   <div class="form-acts"><button type="button" class="btn-ghost" id="lockLater">Later</button><button type="button" class="btn-accent" id="lockGo">Turn on two-step</button></div>`);
+  $('#lockGo').addEventListener('click',openMfaSetup);
+  $('#lockLater').addEventListener('click',()=>{try{sessionStorage.setItem('myos-lock-later','1')}catch(_){}closeSheet()});
+}
 function showMfaChallenge(){
   $('#app').hidden=true;$('#fab').hidden=true;const a=$('#authView');a.hidden=false;
   a.innerHTML=`<div class="auth"><div class="brand" style="margin-bottom:18px"><div class="mark" aria-hidden="true"><span></span></div><div><small>My OS</small><b>Health</b></div></div>
@@ -2914,6 +2928,7 @@ async function boot(){
   applyAccent(D.settings.accent||CFG.accent);
   renderFooter();render();
   if(fresh)save();else setSync('saved');
+  lockPrompt();
   let loadedAt=Date.now();
   // photo links expire after 30 minutes: quietly reload while the app is open and idle
   setInterval(async()=>{if(STORE.mode!=='supabase'||document.visibilityState!=='visible'||$('#overlay').innerHTML||V.editChart||V.customizing||V.editing)return;try{const d=await STORE.load();if(d){D=normalize(d);loadedAt=Date.now();render()}}catch(_){}},25*60*1000);
