@@ -2887,11 +2887,15 @@ async function exportData(){
   copy._exported=new Date().toISOString();copy._app='myos-health';
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(copy)],{type:'application/json'}));a.download=`myos-health-backup-${TODAY}.json`;document.body.appendChild(a);a.click();a.remove();
 }
+// a backup from the computer-only version carries its photos and files inline; in synced mode they upload
+// encrypted, so ask for the vault straight after the import instead of leaving the save stuck on "Photos locked"
+function hasLocalMedia(d){const inl=x=>x&&((x.src&&String(x.src).startsWith('data:'))||x.dataUrl||x.blob);
+  return (d.entries||[]).some(e=>(e.photos||[]).some(inl)||(e.files||[]).some(inl))||(d.labs||[]).some(l=>inl(l.file))||(d.regimens||[]).some(r=>(r.photos||[]).some(inl))||((d.settings&&d.settings.providers)||[]).some(p=>inl(p.photo))||String(d.basePhoto||'').startsWith('data:')}
 function importData(){
   const inp=document.createElement('input');inp.type='file';inp.accept='application/json,.json';
   inp.onchange=async()=>{const f=inp.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!['myos-health','myos-body'].includes(d._app)||!Array.isArray(d.entries))throw new Error('This is not a My OS Health backup.');
     openSheet(`<div class="sheet-h"><h3>Replace your data with this backup?</h3><button class="x" type="button" aria-label="Close">✕</button></div><p style="margin:0 0 14px;color:var(--muted)">Backup from ${esc((d._exported||'').slice(0,10))} with ${d.entries.length} entries. Everything currently in the app is replaced.</p><div class="form-acts"><span></span><button class="btn-accent" type="button" id="impGo">Replace with backup</button></div>`);
-    $('#impGo').addEventListener('click',()=>{D=normalize(d);delete D._exported;delete D._app;if(STORE.mode==='supabase'){D.entries.forEach(e=>e.photos.forEach(p=>{if(p.src&&!p.src.startsWith('data:'))delete p.path}));}save();closeSheet();V.frame=null;render()});
+    $('#impGo').addEventListener('click',()=>{D=normalize(d);delete D._exported;delete D._app;if(STORE.mode==='supabase'){D.entries.forEach(e=>e.photos.forEach(p=>{if(p.src&&!p.src.startsWith('data:'))delete p.path}));}save();closeSheet();V.frame=null;render();if(STORE.mode==='supabase'&&hasLocalMedia(D))needVault()});
   }catch(e){alertSheet('Could not read that file',e.message||String(e))}};
   inp.click();
 }
