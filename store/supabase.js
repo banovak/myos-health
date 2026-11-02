@@ -177,7 +177,7 @@
       async mfaEnroll() {
         const all = await this.mfaFactors();
         for (const f of all.all.filter(f => f.status !== 'verified')) await sb.auth.mfa.unenroll({ factorId: f.id });
-        const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'My OS Health' });
+        const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'My OS Health', issuer: 'My OS Health' });
         if (error) throw error; return data;
       },
       async mfaVerify(factorId, code) { const { error } = await sb.auth.mfa.challengeAndVerify({ factorId, code }); if (error) throw error; },

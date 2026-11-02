@@ -2831,9 +2831,15 @@ async function openSecurity(){
 async function openMfaSetup(){
   openSheet(`<div class="sheet-h"><h3>Turn on two-step sign-in</h3><button class="x" type="button" aria-label="Close">✕</button></div><div id="mfaBody"><p class="empty">Preparing…</p></div>`);
   try{const d=await STORE.mfaEnroll();
-    $('#mfaBody').innerHTML=`<p style="margin:0 0 12px;color:var(--muted);font-size:13px">Scan this with an authenticator app (1Password, Google Authenticator, Authy), then enter the 6-digit code it shows.</p>
+    $('#mfaBody').innerHTML=`<p style="margin:0 0 8px;font-size:13px"><b>1. Add this code to an authenticator app.</b></p>
+     <ul style="margin:0 0 12px;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.5">
+      <li><b>Google Authenticator, Microsoft Authenticator or Authy</b> (free): open the app, tap +, scan the code.</li>
+      <li><b>1Password</b>: open your My OS Health login, edit it, add a one-time password, scan the code.</li>
+      <li><b>iPhone Passwords</b>: save a login for My OS Health first (your email and password), then point the Camera at the code and choose that login when it asks. On its own, the Camera opens Passwords and nothing gets added.</li>
+     </ul>
+     <p style="margin:0 0 12px;font-size:13px"><a href="${esc(d.totp.uri)}">On this phone? Tap here to add it.</a></p>
      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px"><img src="${esc(d.totp.qr_code)}" alt="QR code for your authenticator app" width="180" height="180" style="background:#fff;border-radius:12px;padding:8px"><div class="s" style="font-size:12px;color:var(--muted);max-width:240px">Can't scan? Enter this key instead:<br><code style="font-family:var(--font-data);color:var(--ink);word-break:break-all">${esc(d.totp.secret)}</code></div></div>
-     <form class="form" id="mfaForm" novalidate><div class="f"><label for="mfa_c">6-digit code</label><input id="mfa_c" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div><div class="form-acts"><span></span><button class="btn-accent" type="submit">Turn on</button></div><div class="err" id="mfaErr"></div></form>`;
+     <p style="margin:0 0 8px;font-size:13px"><b>2. Enter the 6-digit code it now shows for My OS Health.</b></p><form class="form" id="mfaForm" novalidate><div class="f"><label for="mfa_c">6-digit code</label><input id="mfa_c" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div><div class="form-acts"><span></span><button class="btn-accent" type="submit">Turn on</button></div><div class="err" id="mfaErr"></div></form>`;
     $('#mfaForm').addEventListener('submit',async e=>{e.preventDefault();try{await STORE.mfaVerify(d.id,$('#mfa_c').value.trim());closeSheet();openSecurity()}catch(err){$('#mfaErr').textContent=err.message||String(err)}});
   }catch(err){$('#mfaBody').innerHTML=`<p class="err">${esc(err.message||String(err))}</p>`}
 }
